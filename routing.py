@@ -32,3 +32,8 @@ def find_best_runner(db: Session, target_city: str):
         return None
 
     return runners_here[0]
+
+def log_status_event(db: Session, request_id: int, status: str, note: str = None):
+    event = models.StatusEvent(request_id=request_id, status=status, note=note)
+    db.add(event)
+    db.commit()

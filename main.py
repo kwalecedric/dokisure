@@ -77,9 +77,16 @@ def assign_runner(request_id: int, db: Session = Depends(get_db)):
     if best_runner:
         request.runner_id = best_runner.id
         request.status = "runner_assigned"
+        db.commit()
+        routing.log_status_event(db, request.id, "runner_assigned", f"Assigned to {best_runner.full_name} in {target_city}")
     else:
         request.status = "awaiting_runner"
+        db.commit()
+        routing.log_status_event(db, request.id, "awaiting_runner", f"No runner available in {target_city}")
 
-    db.commit()
     db.refresh(request)
     return request
+
+@app.get("/requests/{request_id}/history")
+def get_request_history(request_id: int, db: Session = Depends(get_db)):
+    return db.query(models.StatusEvent).filter(models.StatusEvent.request_id == request_id).all()

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.sql import func
 from database import Base
 
 
@@ -43,3 +44,12 @@ class RequestRecord(Base):
     target_city = Column(String, nullable=True)
     runner_id = Column(Integer, nullable=True)
     status = Column(String, default="submitted")
+
+class StatusEvent(Base):
+    __tablename__ = "status_events"
+
+    id = Column(Integer, primary_key=True)
+    request_id = Column(Integer, nullable=False)
+    status = Column(String, nullable=False)
+    note = Column(String, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
