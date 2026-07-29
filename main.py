@@ -16,6 +16,10 @@ def read_root():
 
 @app.post("/requesters")
 def create_requester(phone: str, full_name: str, birth_city: str = None, db: Session = Depends(get_db)):
+    existing = db.query(models.Requester).filter(models.Requester.phone == phone).first()
+    if existing:
+        return {"error": f"A requester with phone {phone} already exists (id: {existing.id})"}
+
     new_requester = models.Requester(phone=phone, full_name=full_name, birth_city=birth_city)
     db.add(new_requester)
     db.commit()

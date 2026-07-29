@@ -31,6 +31,19 @@ def find_best_runner(db: Session, target_city: str):
     if not runners_here:
         return None
 
+    finished_statuses = ["delivered", "collected"]
+
+    def active_load(runner):
+        return (
+            db.query(models.RequestRecord)
+            .filter(models.RequestRecord.runner_id == runner.id)
+            .filter(models.RequestRecord.status.notin_(finished_statuses))
+            .count()
+        )
+
+    # sort runners by how many active (unfinished) jobs they currently have,
+    # lightest load first
+    runners_here.sort(key=active_load)
     return runners_here[0]
 
 def log_status_event(db: Session, request_id: int, status: str, note: str = None):
