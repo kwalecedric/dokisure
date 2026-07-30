@@ -122,3 +122,26 @@ def release_payment(payment_id: int, db: Session = Depends(get_db)):
     db.refresh(payment)
     routing.log_status_event(db, payment.request_id, "payment_released", f"{payment.amount} FCFA released to runner")
     return payment
+
+@app.post("/requests/{request_id}/update-status")
+def update_status(request_id: int, status: str, note: str = None, db: Session = Depends(get_db)):
+    request = db.query(models.RequestRecord).filter(models.RequestRecord.id == request_id).first()
+    if not request:
+        return {"error": "request not found"}
+
+    valid_statuses = [
+        "runner_assigned",
+        "deposited_at_office",
+        "in_review",
+        "ready_for_pickup",
+        "collected",
+        "delivered"
+    ]
+    if status not in valid_statuses:
+        return {"error": f"Invalid status. Must be one of: {valid_statuses}"}
+
+    request.status = status
+    db.commit()
+    db.refresh(request)
+    routing.log_status_event(db, request_id, status, note)
+    return request
