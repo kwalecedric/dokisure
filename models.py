@@ -53,3 +53,13 @@ class StatusEvent(Base):
     status = Column(String, nullable=False)
     note = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True)
+    request_id = Column(Integer, nullable=False)
+    amount = Column(Integer, nullable=False)
+    provider = Column(String, nullable=True)
+    transaction_ref = Column(String, nullable=True)
+    escrow_status = Column(String, default="held")

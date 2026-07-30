@@ -94,3 +94,31 @@ def assign_runner(request_id: int, db: Session = Depends(get_db)):
 @app.get("/requests/{request_id}/history")
 def get_request_history(request_id: int, db: Session = Depends(get_db)):
     return db.query(models.StatusEvent).filter(models.StatusEvent.request_id == request_id).all()
+
+@app.post("/requests/{request_id}/pay")
+def record_payment(request_id: int, amount: int, provider: str, transaction_ref: str, db: Session = Depends(get_db)):
+    payment = models.Payment(
+        request_id=request_id,
+        amount=amount,
+        provider=provider,
+        transaction_ref=transaction_ref,
+        escrow_status="held"
+    )
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
+    routing.log_status_event(db, request_id, "payment_held", f"{amount} FCFA received via {provider}")
+    return payment
+
+
+@app.post("/payments/{payment_id}/release")
+def release_payment(payment_id: int, db: Session = Depends(get_db)):
+    payment = db.query(models.Payment).filter(models.Payment.id == payment_id).first()
+    if not payment:
+        return {"error": "payment not found"}
+
+    payment.escrow_status = "released"
+    db.commit()
+    db.refresh(payment)
+    routing.log_status_event(db, payment.request_id, "payment_released", f"{payment.amount} FCFA released to runner")
+    return payment
